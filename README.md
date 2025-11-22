@@ -1,6 +1,28 @@
-# Welcome to your Expo app 👋
+# Barber Shop v2 💈
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Sistema de gerenciamento para barbearias desenvolvido com React Native e Expo. Uma solução completa para controlar agendamentos, clientes, serviços e relatórios do seu estabelecimento.
+
+## 📱 Sobre o Projeto
+
+Barber Shop v2 é um aplicativo mobile moderno para gestão de barbearias que oferece:
+
+- **Gestão de Agendamentos**: Visualização de agendamentos por dia/semana com navegação intuitiva
+- **Cadastro de Clientes**: Controle completo dos clientes com histórico de atendimentos
+- **Catálogo de Serviços**: Gerenciamento de serviços oferecidos com preços e durações
+- **Relatórios**: Análise de desempenho e faturamento
+- **Autenticação Segura**: Sistema de login com Redux Saga
+- **Interface Moderna**: Design elegante com gradientes e animações suaves
+
+## 🛠️ Tecnologias
+
+- **React Native 0.81.5** - Framework mobile
+- **Expo SDK 54** - Plataforma de desenvolvimento
+- **Expo Router 6.0.15** - Navegação file-based (Drawer + Tabs)
+- **NativeWind v4** - Tailwind CSS para React Native
+- **Redux + Redux Saga** - Gerenciamento de estado
+- **TypeScript 5.9.2** - Tipagem estática
+- **AsyncStorage** - Persistência local de dados
+- **Expo Linear Gradient** - Gradientes nativos
 
 ## Get started
 
@@ -15,25 +37,59 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```bash
    npx expo start
    ```
+## 📂 Estrutura do Projeto
 
-In the output, you'll find options to open the app in a
+```
+app/
+├── (drawer)/           # Navegação drawer
+│   ├── (tabs)/        # Navegação em abas
+│   │   ├── index.tsx  # Agendamentos
+│   │   ├── clientes.tsx
+│   │   ├── servicos.tsx
+│   │   └── relatorios.tsx
+│   ├── perfil.tsx
+│   └── configuracoes.tsx
+├── index.tsx          # Tela de login
+└── _layout.tsx        # Layout raiz com Redux Provider
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+redux/
+├── actions/           # Action creators
+├── reducers/          # Reducers
+├── sagas/            # Redux Sagas
+└── store.ts          # Configuração da store
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+modais/
+└── ModalAviso/       # Modal genérico de avisos
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🎨 Funcionalidades
+
+### Agendamentos
+- Visualização semanal de agendamentos
+- Navegação entre semanas (anterior/próxima/hoje)
+- Cards coloridos por status (confirmado, aguardando, cancelado)
+- Detalhes completos de cada agendamento
+
+### Clientes
+- Lista de clientes com busca
+- Informações de contato e histórico
+- Pull-to-refresh para atualizar dados
+
+### Serviços
+- Catálogo de serviços oferecidos
+- Preços e duração de cada serviço
+- Gerenciamento via Redux Saga
+
+### Sistema de Autenticação
+- Login com validação
+- Navegação controlada por sagas
+- Persistência de sessão com AsyncStorage
+- Modais elegantes para feedback
+
+## 🚀 Credenciais de Teste
+
+**Usuário:** admin  
+**Senha:** 123
 
 ## Learn more
 

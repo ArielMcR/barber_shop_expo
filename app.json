@@ -8,6 +8,7 @@
     "scheme": "barbershopv2",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "edgeToEdgeEnabled": true,
     "ios": {
       "supportsTablet": true
     },
