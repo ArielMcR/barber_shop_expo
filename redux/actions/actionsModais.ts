@@ -1,3 +1,4 @@
+import { CampoFormulario } from "@/modais/ModalFormulario";
 import types from "../types/typesModais";
 
 export const setModalLogin = (payload: { statusAtivo: boolean; mensagem: string }) => ({
@@ -18,5 +19,18 @@ export const setModalAviso = (payload: {
     inverterCoresBotaoInfo: boolean;
 }) => ({
     type: types.SET_MODAL_AVISO,
+    payload
+});
+
+export const setModalFormulario = (payload: {
+    statusAtivo: boolean;
+    titulo: string;
+    campos: CampoFormulario[];
+    textoBotaoConfirmar?: string;
+    textoBotaoCancelar?: string;
+    onConfirmar?: (valores: Record<string, string>) => void;
+    onCancelar?: () => void;
+}) => ({
+    type: types.SET_MODAL_FORMULARIO,
     payload
 });

@@ -1,3 +1,4 @@
+import { CampoFormulario } from "@/modais/ModalFormulario";
 import { types } from "../types/typesModais";
 
 const initialState = {
@@ -18,6 +19,15 @@ const initialState = {
         textoBotaoConfirmar: "",
         inverterCoresBotaoInfo: false,
     },
+    modal_formulario: {
+        statusAtivo: false,
+        titulo: '',
+        campos: [] as CampoFormulario[],
+        textoBotaoConfirmar: '',
+        textoBotaoCancelar: '',
+        onConfirmar: undefined as ((valores: Record<string, string>) => void) | undefined,
+        onCancelar: undefined as (() => void) | undefined,
+    },
 }
 
 export const modalReducer = (state = initialState, action: any) => {
@@ -31,6 +41,11 @@ export const modalReducer = (state = initialState, action: any) => {
             return {
                 ...state,
                 modal_aviso: action.payload
+            };
+        case types.SET_MODAL_FORMULARIO:
+            return {
+                ...state,
+                modal_formulario: action.payload
             };
         default:
             return state;

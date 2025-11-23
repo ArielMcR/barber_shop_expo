@@ -1,4 +1,5 @@
 import ScreenWrapper, { useInsets } from '@/components/ScreenWrapper';
+import { useModalFormulario } from '@/hooks/useModalFormulario';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { requestClients } from '@/redux/actions/actionsClients';
 import Feather from '@expo/vector-icons/Feather';
@@ -16,6 +17,7 @@ type Cliente = {
 export default function ClientesScreen() {
     const insets = useInsets();
     const dispatch = useAppDispatch();
+    const modalFormulario = useModalFormulario();
     const clientes = useAppSelector((state) => state.clientes.clients) || [];
 
 
@@ -24,6 +26,55 @@ export default function ClientesScreen() {
     const filteredClientes: Cliente[] = clientes.filter((cliente: Cliente) =>
         cliente.nome.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const abrirCadastroCliente = () => {
+        modalFormulario.abrirFormulario(
+            'Novo Cliente',
+            [
+                {
+                    nome: 'nome',
+                    label: 'Nome Completo',
+                    placeholder: 'Digite o nome do cliente',
+                    icone: 'user',
+                    obrigatorio: true,
+                },
+                {
+                    nome: 'telefone',
+                    label: 'Telefone',
+                    placeholder: '(00) 00000-0000',
+                    icone: 'phone',
+                    tipo: 'phone', // Máscara automática: (00) 00000-0000
+                    obrigatorio: true,
+                },
+                {
+                    nome: 'email',
+                    label: 'E-mail',
+                    placeholder: 'cliente@email.com',
+                    icone: 'mail',
+                    tipo: 'email',
+                    obrigatorio: false,
+                },
+                {
+                    nome: 'observacoes',
+                    label: 'Observações',
+                    placeholder: 'Anotações sobre o cliente',
+                    icone: 'file-text',
+                    multiline: true,
+                    linhas: 4,
+                    obrigatorio: false,
+                },
+            ],
+            {
+                textoBotaoConfirmar: 'Cadastrar Cliente',
+                textoBotaoCancelar: 'Cancelar',
+                onConfirmar: (valores) => {
+                    console.log('Dados do cliente:', valores);
+                    // valores.telefone virá mascarado: "(11) 99999-9999"
+                },
+            }
+        );
+    };
+
 
     useEffect(() => {
         dispatch(requestClients());
@@ -72,7 +123,7 @@ export default function ClientesScreen() {
                 />
             </View>
 
-            <Pressable className="absolute right-6 bg-green-500 w-14 h-14 rounded-full items-center justify-center shadow-lg" style={{ bottom: insets.bottom + 24 }}>
+            <Pressable className="absolute right-6 bg-green-500 w-14 h-14 rounded-full items-center justify-center shadow-lg" style={{ bottom: insets.bottom + 24 }} onPress={abrirCadastroCliente}>
                 <Feather name="user-plus" size={24} color="white" />
             </Pressable>
         </ScreenWrapper>

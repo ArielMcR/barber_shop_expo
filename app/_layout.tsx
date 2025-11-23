@@ -1,4 +1,5 @@
 import ModalAviso from '@/modais/ModalAviso';
+import ModalFormulario from '@/modais/ModalFormulario';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
@@ -14,6 +15,7 @@ export default function RootLayout() {
         <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
       </Stack>
       <ModalAviso />
+      <ModalFormulario />
     </Provider>
   );
 }

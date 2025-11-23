@@ -1,4 +1,5 @@
 import ScreenWrapper, { useInsets } from '@/components/ScreenWrapper';
+import { useModalFormulario } from '@/hooks/useModalFormulario';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { requestServico } from '@/redux/actions/actionsServico';
 import Feather from '@expo/vector-icons/Feather';
@@ -15,7 +16,51 @@ type Servico = {
 export default function ServicosScreen() {
     const insets = useInsets();
     const dispatch = useAppDispatch();
+    const modalFormulario = useModalFormulario();
     const servicos = useAppSelector((state) => state.servicos.servicos) || [];
+
+
+
+    const abrirCadastroServico = () => {
+        modalFormulario.abrirFormulario(
+            'Novo Serviço',
+            [
+                {
+                    nome: 'nome',
+                    label: 'Nome do Serviço',
+                    placeholder: 'Ex: Corte Masculino',
+                    icone: 'scissors',
+                    obrigatorio: true,
+                },
+                {
+                    nome: 'preco',
+                    label: 'Preço',
+                    placeholder: 'R$ 000.000,00',
+                    icone: 'dollar-sign',
+                    tipo: 'currency', // Máscara automática de moeda
+                    obrigatorio: true,
+                },
+                {
+                    nome: 'duracao',
+                    label: 'Duração (minutos)',
+                    placeholder: 'Ex: 30',
+                    icone: 'clock',
+                    tipo: 'number',
+                    obrigatorio: true,
+                },
+            ],
+            {
+                onConfirmar: (valores) => {
+                    // valores.preco virá sem máscara para facilitar conversão
+                    const servico = {
+                        nome: valores.nome,
+                        preco: parseFloat(valores.preco) / 100, // Converter centavos para reais
+                        duracao: parseInt(valores.duracao),
+                    };
+                },
+            }
+        );
+    };
 
 
     useEffect(() => {
@@ -59,7 +104,7 @@ export default function ServicosScreen() {
                 />
             </View>
 
-            <Pressable className="absolute right-6 bg-green-500 w-14 h-14 rounded-full items-center justify-center shadow-lg" style={{ bottom: insets.bottom + 24 }}>
+            <Pressable className="absolute right-6 bg-green-500 w-14 h-14 rounded-full items-center justify-center shadow-lg" style={{ bottom: insets.bottom + 24 }} onPress={abrirCadastroServico}>
                 <Feather name="plus" size={24} color="white" />
             </Pressable>
         </ScreenWrapper>
