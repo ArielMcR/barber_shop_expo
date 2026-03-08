@@ -1,7 +1,7 @@
 import ScreenWrapper, { useInsets } from '@/components/ScreenWrapper';
 import { useModalFormulario } from '@/hooks/useModalFormulario';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
-import { requestServico } from '@/redux/actions/actionsServico';
+import { createServico, requestServico } from '@/redux/actions/actionsServico';
 import Feather from '@expo/vector-icons/Feather';
 import { useEffect } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
@@ -51,12 +51,12 @@ export default function ServicosScreen() {
             ],
             {
                 onConfirmar: (valores) => {
-                    // valores.preco virá sem máscara para facilitar conversão
                     const servico = {
                         nome: valores.nome,
                         preco: parseFloat(valores.preco) / 100, // Converter centavos para reais
                         duracao: parseInt(valores.duracao),
                     };
+                    dispatch(createServico(servico));
                 },
             }
         );

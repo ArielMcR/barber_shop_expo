@@ -28,6 +28,14 @@ const initialState = {
         onConfirmar: undefined as ((valores: Record<string, string>) => void) | undefined,
         onCancelar: undefined as (() => void) | undefined,
     },
+    modal_agendamento: {
+        statusAtivo: false,
+        horario: '',
+        data: '',
+        modo: 'novo' as 'novo' | 'trocar_cliente' | 'trocar_servico',
+        clienteAtual: null as any,
+        servicoAtual: null as any,
+    },
 }
 
 export const modalReducer = (state = initialState, action: any) => {
@@ -46,6 +54,11 @@ export const modalReducer = (state = initialState, action: any) => {
             return {
                 ...state,
                 modal_formulario: action.payload
+            };
+        case types.SET_MODAL_AGENDAMENTO:
+            return {
+                ...state,
+                modal_agendamento: action.payload
             };
         default:
             return state;

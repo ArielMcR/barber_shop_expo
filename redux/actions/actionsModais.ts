@@ -34,3 +34,15 @@ export const setModalFormulario = (payload: {
     type: types.SET_MODAL_FORMULARIO,
     payload
 });
+
+export const setModalAgendamento = (payload: {
+    statusAtivo: boolean;
+    horario: string;
+    data: string;
+    modo?: 'novo' | 'trocar_cliente' | 'trocar_servico';
+    clienteAtual?: any;
+    servicoAtual?: any;
+}) => ({
+    type: types.SET_MODAL_AGENDAMENTO,
+    payload
+});

@@ -15,12 +15,12 @@ export default function App() {
     const modalAviso = useModalAviso();
 
     const [isKeyboardVisible, setIsKeyboardVisible] = useState<boolean>(false);
-    const [user, setUser] = useState<{ user: string, password: string }>({ user: "", password: "" });
+    const [user, setUser] = useState<{ name: string, password: string }>({ name: "", password: "" });
     const [showPassword, setShowPassword] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
 
     const realizarLogin_ = () => {
-        if (!user.user.trim()) {
+        if (!user.name.trim()) {
             modalAviso.mostrarAviso('Por favor, digite seu usuário');
             return;
         }
@@ -28,7 +28,7 @@ export default function App() {
             modalAviso.mostrarAviso('Por favor, digite sua senha');
             return;
         }
-        dispatch(realizarLogin({ usuario: user.user, senha: user.password }));
+        dispatch(realizarLogin({ name: user.name, password: user.password, companyId: null, unitId: null }));
     }
 
     useEffect(() => {
@@ -96,8 +96,8 @@ export default function App() {
                                             style={styles.input}
                                             placeholder="Usuário"
                                             placeholderTextColor="#9ca3af"
-                                            value={user.user}
-                                            onChangeText={(text) => setUser(prev => ({ ...prev, user: text }))}
+                                            value={user.name}
+                                            onChangeText={(text) => setUser(prev => ({ ...prev, name: text }))}
                                             autoCapitalize="none"
                                             editable={!usuario?.isLoading}
                                         />

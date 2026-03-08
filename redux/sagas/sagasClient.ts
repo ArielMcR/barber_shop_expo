@@ -3,21 +3,24 @@ import { setClients } from "../actions/actionsClients";
 import { setModalAviso } from "../actions/actionsModais";
 import { types } from "../types/typesCliente";
 
+let clientes = [
+    { id: 1, nome: 'João Silva', telefone: '(11) 98765-4321', ultimaVisita: '15/11/2025' },
+    { id: 2, nome: 'Pedro Santos', telefone: '(11) 98765-4322', ultimaVisita: '18/11/2025' },
+    { id: 3, nome: 'Carlos Oliveira', telefone: '(11) 98765-4323', ultimaVisita: '20/11/2025' },
+    { id: 4, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
+    { id: 5, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
+    { id: 6, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
+    { id: 7, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
+    { id: 8, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
+    { id: 9, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
+    { id: 10, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
+];
+
+
+
 function* requestClients() {
     try {
         // const {data: clientes} = yield call(api.get, '/clientes');
-        const clientes = [
-            { id: 1, nome: 'João Silva', telefone: '(11) 98765-4321', ultimaVisita: '15/11/2025' },
-            { id: 2, nome: 'Pedro Santos', telefone: '(11) 98765-4322', ultimaVisita: '18/11/2025' },
-            { id: 3, nome: 'Carlos Oliveira', telefone: '(11) 98765-4323', ultimaVisita: '20/11/2025' },
-            { id: 4, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
-            { id: 5, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
-            { id: 6, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
-            { id: 7, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
-            { id: 8, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
-            { id: 9, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
-            { id: 10, nome: 'Lucas Ferreira', telefone: '(11) 98765-4324', ultimaVisita: '21/11/2025' },
-        ]; // Simulação de dados
         yield put(setClients(clientes));
     } catch (error) {
         console.error("Erro ao buscar clientes:", error);
@@ -39,7 +42,9 @@ function* requestClients() {
 
 function* createClient(action: ReturnType<typeof import('../actions/actionsClients').createClient>) {
     try {
-        // Lógica para criar cliente
+        // Lógica para criar cliente depois
+        console.log("Criando cliente:", action.payload.client);
+        clientes.push(action.payload.client);
         // yield call(api.post, '/clientes', action.client);
         // Após criar, você pode querer atualizar a lista de clientes
         yield requestClients();

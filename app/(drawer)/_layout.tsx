@@ -1,8 +1,11 @@
+import { useAppSelector } from '@/hooks/useRedux';
 import Feather from '@expo/vector-icons/Feather';
 import { Drawer } from 'expo-router/drawer';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function DrawerLayout() {
+    const empresa = useAppSelector((state) => state.empresa.empresa);
+    console.log('Empresa no DrawerLayout:', empresa);
     return (
         <GestureHandlerRootView className="flex-1">
             <Drawer
@@ -10,7 +13,7 @@ export default function DrawerLayout() {
                     drawerActiveTintColor: '#10b981',
                     drawerInactiveTintColor: '#6b7280',
                     headerStyle: {
-                        backgroundColor: '#10b981',
+                        backgroundColor: '#02D96B',
                     },
                     headerTintColor: '#fff',
                     headerTitleStyle: {
@@ -22,7 +25,7 @@ export default function DrawerLayout() {
                     name="(tabs)"
                     options={{
                         drawerLabel: 'Início',
-                        title: 'Barber Shop',
+                        title: empresa ? empresa.legalName : 'Início',
                         drawerIcon: ({ color, size }) => (
                             <Feather name="home" size={size} color={color} />
                         ),

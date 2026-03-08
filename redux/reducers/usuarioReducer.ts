@@ -1,9 +1,12 @@
 import { types } from '../types/typesUsuario';
 
 interface Usuario {
-    nome_usuario: string;
+    name: string;
     cod: number;
     permissoes: string[];
+    token: string;
+    role: string;
+    email: string;
 }
 
 interface UsuarioState {

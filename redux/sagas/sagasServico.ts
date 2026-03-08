@@ -3,16 +3,17 @@ import { setModalAviso } from "../actions/actionsModais";
 import { setServico } from "../actions/actionsServico";
 import { types } from "../types/typesServico";
 
+let servicos = [
+    { id: 1, nome: 'Corte Simples', duracao: '30 min', preco: 'R$ 30,00' },
+    { id: 2, nome: 'Corte + Barba', duracao: '45 min', preco: 'R$ 50,00' },
+    { id: 3, nome: 'Barba', duracao: '20 min', preco: 'R$ 25,00' },
+    { id: 4, nome: 'Corte Infantil', duracao: '25 min', preco: 'R$ 25,00' },
+    { id: 5, nome: 'Platinado', duracao: '90 min', preco: 'R$ 100,00' },
+];
+
 function* requestServicos() {
     try {
         // const {data: servicos} = yield call(api.get, '/servicos');
-        const servicos = [
-            { id: 1, nome: 'Corte Simples', duracao: '30 min', preco: 'R$ 30,00' },
-            { id: 2, nome: 'Corte + Barba', duracao: '45 min', preco: 'R$ 50,00' },
-            { id: 3, nome: 'Barba', duracao: '20 min', preco: 'R$ 25,00' },
-            { id: 4, nome: 'Corte Infantil', duracao: '25 min', preco: 'R$ 25,00' },
-            { id: 5, nome: 'Platinado', duracao: '90 min', preco: 'R$ 100,00' },
-        ]; // Simulação de dados
         yield put(setServico(servicos));
     } catch (error) {
         console.error("Erro ao buscar serviços:", error);
@@ -35,6 +36,7 @@ function* requestServicos() {
 function* createServico(action: ReturnType<typeof import('../actions/actionsServico').createServico>) {
     try {
         // Lógica para criar serviço
+        servicos.push(action.payload.servico);
         // yield call(api.post, '/servicos', action.servico);
         // Após criar, você pode querer atualizar a lista de serviços
         yield requestServicos();

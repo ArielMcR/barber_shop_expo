@@ -1,5 +1,5 @@
 import ScreenWrapper, { useInsets } from '@/components/ScreenWrapper';
-import { useAppDispatch } from '@/hooks/useRedux';
+import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { deslogarUsuario } from '@/redux/actions/actionsUsuario';
 import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
@@ -9,6 +9,7 @@ export default function PerfilScreen() {
     const router = useRouter();
     const insets = useInsets();
     const dispatch = useAppDispatch();
+    const usuario = useAppSelector((state) => state.usuario.usuario);
 
     return (
         <ScreenWrapper className="flex-1 bg-gray-50" withTopInset={false}>
@@ -17,8 +18,8 @@ export default function PerfilScreen() {
                     <View className="bg-white w-24 h-24 rounded-full items-center justify-center mb-4">
                         <Feather name="user" size={48} color="#10b981" />
                     </View>
-                    <Text className="text-white text-2xl font-bold">Ari Barbeiro</Text>
-                    <Text className="text-white text-sm mt-1">ari@barbershop.com</Text>
+                    <Text className="text-white text-2xl font-bold">{usuario?.name || 'Ari Barbeiro'}</Text>
+                    <Text className="text-white text-sm mt-1">{usuario?.email || 'ari@barbershop.com'}</Text>
                 </View>
 
                 <View className="p-4 -mt-8">

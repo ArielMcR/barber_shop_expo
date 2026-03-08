@@ -1,10 +1,10 @@
 import ScreenWrapper, { useInsets } from '@/components/ScreenWrapper';
 import { useModalFormulario } from '@/hooks/useModalFormulario';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
-import { requestClients } from '@/redux/actions/actionsClients';
+import { createClient, requestClients } from '@/redux/actions/actionsClients';
 import Feather from '@expo/vector-icons/Feather';
 import { useEffect, useState } from 'react';
-import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { RefreshControl } from 'react-native-gesture-handler';
 
 type Cliente = {
@@ -68,8 +68,7 @@ export default function ClientesScreen() {
                 textoBotaoConfirmar: 'Cadastrar Cliente',
                 textoBotaoCancelar: 'Cancelar',
                 onConfirmar: (valores) => {
-                    console.log('Dados do cliente:', valores);
-                    // valores.telefone virá mascarado: "(11) 99999-9999"
+                    dispatch(createClient(valores));
                 },
             }
         );
@@ -100,7 +99,7 @@ export default function ClientesScreen() {
                     data={filteredClientes}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item: cliente }) => (
-                        <Pressable
+                        <TouchableOpacity
                             className="bg-white rounded-xl p-4 shadow-sm border border-gray-200"
                         >
                             <View className="flex-row items-center gap-3">
@@ -116,7 +115,7 @@ export default function ClientesScreen() {
                                 </View>
                                 <Feather name="chevron-right" size={20} color="#6b7280" />
                             </View>
-                        </Pressable>
+                        </TouchableOpacity>
                     )}
                     contentContainerStyle={{ gap: 12 }}
                     refreshControl={<RefreshControl onRefresh={() => dispatch(requestClients())} refreshing={false} />}

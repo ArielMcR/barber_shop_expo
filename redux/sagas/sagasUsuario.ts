@@ -1,25 +1,17 @@
 
+import api from '@/services/api';
 import navigationService from '@/services/navigationService';
+import { typesRole } from '@/types/typesUsuarioRole';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { call, put, takeLatest } from 'redux-saga/effects';
 import { setModalAviso } from '../actions/actionsModais';
 import { clearUsuario, setUsuario } from '../actions/actionsUsuario';
+import { types as typesEmpresa } from '../types/typesEmpresa';
 import { types } from '../types/typesUsuario';
 
-// Simulação de API - substitua pela sua API real
-const loginAPI = async (credentials: { usuario: string; senha: string }) => {
-    // Simula delay de rede
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    // Simulação de login - substitua pela chamada real à API
-    if (credentials.usuario == 'admin' && credentials.senha == '123') {
-        return {
-            nome_usuario: 'Administrador',
-            cod: 1,
-            permissoes: ['admin', 'criar', 'editar', 'deletar'],
-            isLoggedIn: true
-        };
-    }
-    throw new Error('Usuário ou senha inválidos');
+const loginAPI = async (credentials: { name: string; password: string, companyId: number | null, unitId: number | null }) => {
+    const { data: dados } = await api.post('/auth/login', credentials);
+    return dados;
 };
 
 function* validarLogin(): Generator<any, void, any> {
@@ -40,21 +32,34 @@ function* validarLogin(): Generator<any, void, any> {
 
 function* realizarLogin(action: ReturnType<typeof import('../actions/actionsUsuario').realizarLogin>): Generator<any, void, any> {
     try {
-        const usuario = yield call(loginAPI, action.login);
+        console.log("dados de login", action.login);
 
-        // Salva no AsyncStorage
-        yield call(AsyncStorage.setItem, 'userToken', 'fake-token-123');
-        yield call(AsyncStorage.setItem, 'userData', JSON.stringify(usuario));
+        const resposta = yield call(loginAPI, action.login);
+        // console.log("Resposta", resposta);
 
-        yield put(setUsuario(usuario));
 
-        // Navega diretamente pelo saga
+        const isSuperAdmin = resposta.user?.role === typesRole.SUPER_ADMIN;
+        const precisaSelecionarEmpresa = isSuperAdmin && resposta.companies?.length > 0 && !action.login.companyId;
+
+        if (precisaSelecionarEmpresa) {
+            yield put({ type: typesEmpresa.SET_EMPRESAS, payload: resposta.companies });
+            yield put({ type: typesEmpresa.SET_CREDENCIAIS_TEMP, payload: { name: action.login.name, password: action.login.password } });
+            navigationService.replace('/selecao-empresa');
+            return;
+        }
+
+        yield call(AsyncStorage.setItem, 'userToken', resposta.access_token);
+        yield call(AsyncStorage.setItem, 'userData', JSON.stringify(resposta.user));
+        yield put(setUsuario(resposta.user));
+        yield put({ type: typesEmpresa.SET_EMPRESA, payload: resposta.company });
+        yield put({ type: typesEmpresa.CLEAR_CREDENCIAIS_TEMP });
+
         yield put(setModalAviso({
             statusAtivo: true,
             tipo: 'sucesso',
             mensagem: 'Login realizado com sucesso!',
             textAlign: 'center',
-            onPress: (() => { }),
+            onPress: () => { },
             onPressCancel: () => { },
             textoBotao: 'OK',
             desabilitaFecharPorTouch: false,
@@ -62,11 +67,12 @@ function* realizarLogin(action: ReturnType<typeof import('../actions/actionsUsua
             textoBotaoConfirmar: '',
             inverterCoresBotaoInfo: false,
         }));
+
         navigationService.replace('/(drawer)/(tabs)');
     } catch (error: any) {
         yield put({
             type: types.LOGIN_ERROR,
-            error: error.message || 'Erro ao fazer login',
+            error: error.message || 'Usuário ou senha inválidos',
         });
     }
 }
@@ -77,7 +83,7 @@ function* deslogarUsuario() {
         yield call(AsyncStorage.removeItem, 'userData');
         yield put(clearUsuario());
 
-        // Navega de volta para o login
+
         navigationService.replace('/');
     } catch (error) {
         console.error('Erro ao deslogar:', error);

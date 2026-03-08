@@ -12,6 +12,7 @@ export default function RootLayout() {
       <StatusBar style="light" translucent backgroundColor="transparent" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="selecao-empresa" options={{ headerShown: false }} />
         <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
       </Stack>
       <ModalAviso />
