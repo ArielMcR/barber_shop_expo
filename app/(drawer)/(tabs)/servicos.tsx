@@ -1,9 +1,12 @@
+import CabecalhoTela from '@/components/CabecalhoTela';
 import ScreenWrapper, { useInsets } from '@/components/ScreenWrapper';
+import { Cores, Sombra } from '@/constants/design';
 import { useModalFormulario } from '@/hooks/useModalFormulario';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { createServico, requestServico } from '@/redux/actions/actionsServico';
 import Feather from '@expo/vector-icons/Feather';
-import { useEffect } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 
 type Servico = {
@@ -26,14 +29,14 @@ export default function ServicosScreen() {
             'Novo Serviço',
             [
                 {
-                    nome: 'nome',
+                    name: 'nome',
                     label: 'Nome do Serviço',
                     placeholder: 'Ex: Corte Masculino',
                     icone: 'scissors',
                     obrigatorio: true,
                 },
                 {
-                    nome: 'preco',
+                    name: 'preco',
                     label: 'Preço',
                     placeholder: 'R$ 000.000,00',
                     icone: 'dollar-sign',
@@ -41,7 +44,7 @@ export default function ServicosScreen() {
                     obrigatorio: true,
                 },
                 {
-                    nome: 'duracao',
+                    name: 'duracao',
                     label: 'Duração (minutos)',
                     placeholder: 'Ex: 30',
                     icone: 'clock',
@@ -63,49 +66,79 @@ export default function ServicosScreen() {
     };
 
 
-    useEffect(() => {
-        dispatch(requestServico());
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            dispatch(requestServico());
+        }, [dispatch]),
+    );
 
 
     return (
-        <ScreenWrapper className="flex-1 bg-gray-50" withTopInset={false}>
-            <View className="bg-green-500 p-4 pb-6">
-                <Text className="text-white text-2xl font-bold">Serviços</Text>
-                <Text className="text-white text-sm mt-1">Gerencie seus serviços</Text>
-            </View>
+        <ScreenWrapper className="flex-1 bg-canvas" withTopInset={false}>
+            <CabecalhoTela
+                titulo="SERVIÇOS"
+                subtitulo={`${servicos.length} serviço${servicos.length === 1 ? '' : 's'} no catálogo`}
+            />
 
-            <View className="gap-3 flex-1 p-4">
+            <View className="flex-1 px-4">
                 <FlatList
                     data={servicos}
                     keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item: servico }) => (
+                    renderItem={({ item: servico }: { item: Servico }) => (
                         <Pressable
-                            className="bg-white rounded-xl p-4 shadow-sm border border-gray-200"
+                            className="bg-surface rounded-card p-3.5"
+                            style={Sombra.nivel1}
                         >
-                            <View className="flex-row items-center justify-between">
-                                <View className="flex-row items-center gap-3 flex-1">
-                                    <View className="bg-green-100 w-12 h-12 rounded-full items-center justify-center">
-                                        <Feather name="scissors" size={24} color="#10b981" />
-                                    </View>
-                                    <View className="flex-1">
-                                        <Text className="text-lg font-bold text-gray-800">{servico.nome}</Text>
-                                        <Text className="text-gray-600 text-sm mt-1">
-                                            <Feather name="clock" size={12} color="#6b7280" /> {servico.duracao}
+                            <View className="flex-row items-center gap-3">
+                                <View className="bg-brand-soft border border-brand-border w-11 h-11 rounded-full items-center justify-center">
+                                    <Feather name="scissors" size={18} color={Cores.brandDeep} />
+                                </View>
+                                <View className="flex-1">
+                                    <Text className="font-bold text-[15px] text-ink" numberOfLines={1}>
+                                        {servico.nome}
+                                    </Text>
+                                    <View className="flex-row items-center gap-1.5 mt-1">
+                                        <Feather name="clock" size={11} color={Cores.inkSubtle} />
+                                        <Text className="font-sans text-[12.5px] text-ink-muted">
+                                            {servico.duracao}
                                         </Text>
                                     </View>
                                 </View>
-                                <Text className="text-xl font-bold text-green-600">{servico.preco}</Text>
+                                {/* Preço em Oswald: alinha verticalmente com os
+                                    valores da agenda e vira uma coluna de leitura. */}
+                                <Text className="font-display text-[17px] tracking-[0.3px] text-ink">
+                                    {servico.preco}
+                                </Text>
                             </View>
                         </Pressable>
                     )}
-                    refreshControl={<RefreshControl onRefresh={() => dispatch(requestServico())} refreshing={false} />}
-                    contentContainerStyle={{ gap: 12 }}
+                    ListEmptyComponent={
+                        <View className="items-center pt-16 gap-2">
+                            <Feather name="scissors" size={28} color={Cores.inkSubtle} />
+                            <Text className="font-sans text-[14px] text-ink-subtle">
+                                Nenhum serviço cadastrado
+                            </Text>
+                        </View>
+                    }
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            onRefresh={() => dispatch(requestServico())}
+                            refreshing={false}
+                            colors={[Cores.brand]}
+                            tintColor={Cores.brand}
+                        />
+                    }
+                    contentContainerStyle={{ gap: 10, paddingBottom: insets.bottom + 96 }}
                 />
             </View>
 
-            <Pressable className="absolute right-6 bg-green-500 w-14 h-14 rounded-full items-center justify-center shadow-lg" style={{ bottom: insets.bottom + 24 }} onPress={abrirCadastroServico}>
-                <Feather name="plus" size={24} color="white" />
+            <Pressable
+                className="absolute right-5 bg-brand w-14 h-14 rounded-full items-center justify-center active:bg-brand-strong"
+                style={[{ bottom: insets.bottom + 24 }, Sombra.nivel3]}
+                onPress={abrirCadastroServico}
+            >
+                <Feather name="plus" size={22} color={Cores.inkInverse} />
             </Pressable>
         </ScreenWrapper>
     );

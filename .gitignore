@@ -42,4 +42,11 @@ app-example
 /ios
 /android
 
-package-lock.json
+# package-lock.json NAO deve ser ignorado.
+#
+# Sem lockfile de npm no repositorio, o EAS nao sabe qual gerenciador usar e cai
+# no yarn 1 — que, ao contrario do npm 7+, NAO instala peerDependencies. Foi
+# assim que o `react-native-svg` (peer do lucide-react-native) existia aqui e
+# faltava no build, quebrando o bundle so na nuvem.
+#
+# Com o lock versionado, o EAS usa npm e reproduz exatamente esta arvore.

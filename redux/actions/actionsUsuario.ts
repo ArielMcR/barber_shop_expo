@@ -5,7 +5,7 @@ export const validaLogin = () => {
         type: types.VALIDAR_LOGIN
     }
 }
-export const realizarLogin = (login: { name: string, password: string, companyId: number | null, unitId: number | null }) => {
+export const realizarLogin = (login: { name: string, password: string }) => {
     return {
         type: types.REALIZAR_LOGIN,
         login

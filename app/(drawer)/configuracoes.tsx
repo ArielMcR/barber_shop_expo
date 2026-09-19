@@ -1,108 +1,116 @@
-import ScreenWrapper from '@/components/ScreenWrapper';
+import ScreenWrapper, { useInsets } from '@/components/ScreenWrapper';
+import { Cores, Sombra } from '@/constants/design';
 import Feather from '@expo/vector-icons/Feather';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
+const Secao = ({ titulo, children }: { titulo: string; children: ReactNode }) => (
+    <View>
+        <Text className="font-display text-[11px] tracking-[2px] text-ink-muted mb-2.5 px-1">
+            {titulo}
+        </Text>
+        <View className="bg-surface rounded-card overflow-hidden" style={Sombra.nivel1}>
+            {children}
+        </View>
+    </View>
+);
+
+const Divisor = () => <View className="h-px bg-line" />;
+
+const LinhaSwitch = ({
+    icone,
+    rotulo,
+    valor,
+    onChange,
+}: {
+    icone: keyof typeof Feather.glyphMap;
+    rotulo: string;
+    valor: boolean;
+    onChange: (v: boolean) => void;
+}) => (
+    <View className="flex-row items-center justify-between px-4 py-3">
+        <View className="flex-row items-center gap-3 flex-1">
+            <Feather name={icone} size={18} color={Cores.inkMuted} />
+            <Text className="font-sans text-[14.5px] text-ink flex-1">{rotulo}</Text>
+        </View>
+        <Switch
+            value={valor}
+            onValueChange={onChange}
+            trackColor={{ false: Cores.surfaceSunken, true: Cores.brandBorder }}
+            thumbColor={valor ? Cores.brand : Cores.surface}
+            ios_backgroundColor={Cores.surfaceSunken}
+        />
+    </View>
+);
+
+const LinhaLink = ({
+    icone,
+    rotulo,
+}: {
+    icone?: keyof typeof Feather.glyphMap;
+    rotulo: string;
+}) => (
+    <Pressable className="flex-row items-center justify-between px-4 py-3.5 active:bg-surface-alt">
+        <View className="flex-row items-center gap-3 flex-1">
+            {icone && <Feather name={icone} size={18} color={Cores.inkMuted} />}
+            <Text className="font-sans text-[14.5px] text-ink flex-1">{rotulo}</Text>
+        </View>
+        <Feather name="chevron-right" size={18} color={Cores.inkSubtle} />
+    </Pressable>
+);
+
 export default function ConfiguracoesScreen() {
+    const insets = useInsets();
     const [notificacoes, setNotificacoes] = useState(true);
     const [modoEscuro, setModoEscuro] = useState(false);
     const [lembretes, setLembretes] = useState(true);
 
     return (
-        <ScreenWrapper className="flex-1 bg-gray-50" topOffset={16}>
-            <ScrollView className="flex-1 p-4">
-                <View className="gap-4">
-                    <View className="bg-white rounded-xl shadow-sm">
-                        <View className="p-4 border-b border-gray-200">
-                            <Text className="text-lg font-bold text-gray-800">Preferências</Text>
-                        </View>
+        <ScreenWrapper className="flex-1 bg-canvas" topOffset={16}>
+            <ScrollView
+                className="flex-1 px-4"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: insets.bottom + 32, gap: 20 }}
+            >
+                <Secao titulo="PREFERÊNCIAS">
+                    <LinhaSwitch
+                        icone="bell"
+                        rotulo="Notificações"
+                        valor={notificacoes}
+                        onChange={setNotificacoes}
+                    />
+                    <Divisor />
+                    <LinhaSwitch
+                        icone="moon"
+                        rotulo="Modo Escuro"
+                        valor={modoEscuro}
+                        onChange={setModoEscuro}
+                    />
+                    <Divisor />
+                    <LinhaSwitch
+                        icone="clock"
+                        rotulo="Lembretes de Agendamento"
+                        valor={lembretes}
+                        onChange={setLembretes}
+                    />
+                </Secao>
 
-                        <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
-                            <View className="flex-row items-center gap-3">
-                                <Feather name="bell" size={20} color="#6b7280" />
-                                <Text className="text-gray-800">Notificações</Text>
-                            </View>
-                            <Switch
-                                value={notificacoes}
-                                onValueChange={setNotificacoes}
-                                trackColor={{ false: '#d1d5db', true: '#86efac' }}
-                                thumbColor={notificacoes ? '#10b981' : '#f3f4f6'}
-                            />
-                        </View>
+                <Secao titulo="NEGÓCIO">
+                    <LinhaLink icone="briefcase" rotulo="Informações da Barbearia" />
+                    <Divisor />
+                    <LinhaLink icone="calendar" rotulo="Horário de Funcionamento" />
+                    <Divisor />
+                    <LinhaLink icone="dollar-sign" rotulo="Formas de Pagamento" />
+                </Secao>
 
-                        <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
-                            <View className="flex-row items-center gap-3">
-                                <Feather name="moon" size={20} color="#6b7280" />
-                                <Text className="text-gray-800">Modo Escuro</Text>
-                            </View>
-                            <Switch
-                                value={modoEscuro}
-                                onValueChange={setModoEscuro}
-                                trackColor={{ false: '#d1d5db', true: '#86efac' }}
-                                thumbColor={modoEscuro ? '#10b981' : '#f3f4f6'}
-                            />
-                        </View>
-
-                        <View className="flex-row items-center justify-between p-4">
-                            <View className="flex-row items-center gap-3">
-                                <Feather name="clock" size={20} color="#6b7280" />
-                                <Text className="text-gray-800">Lembretes de Agendamento</Text>
-                            </View>
-                            <Switch
-                                value={lembretes}
-                                onValueChange={setLembretes}
-                                trackColor={{ false: '#d1d5db', true: '#86efac' }}
-                                thumbColor={lembretes ? '#10b981' : '#f3f4f6'}
-                            />
-                        </View>
+                <Secao titulo="SOBRE">
+                    <View className="px-4 py-3.5">
+                        <Text className="font-sans text-[12px] text-ink-muted">Versão do App</Text>
+                        <Text className="font-semibold text-[14.5px] text-ink mt-0.5">1.0.0</Text>
                     </View>
-
-                    <View className="bg-white rounded-xl shadow-sm">
-                        <View className="p-4 border-b border-gray-200">
-                            <Text className="text-lg font-bold text-gray-800">Negócio</Text>
-                        </View>
-
-                        <Pressable className="flex-row items-center justify-between p-4 border-b border-gray-200">
-                            <View className="flex-row items-center gap-3">
-                                <Feather name="briefcase" size={20} color="#6b7280" />
-                                <Text className="text-gray-800">Informações da Barbearia</Text>
-                            </View>
-                            <Feather name="chevron-right" size={20} color="#6b7280" />
-                        </Pressable>
-
-                        <Pressable className="flex-row items-center justify-between p-4 border-b border-gray-200">
-                            <View className="flex-row items-center gap-3">
-                                <Feather name="calendar" size={20} color="#6b7280" />
-                                <Text className="text-gray-800">Horário de Funcionamento</Text>
-                            </View>
-                            <Feather name="chevron-right" size={20} color="#6b7280" />
-                        </Pressable>
-
-                        <Pressable className="flex-row items-center justify-between p-4">
-                            <View className="flex-row items-center gap-3">
-                                <Feather name="dollar-sign" size={20} color="#6b7280" />
-                                <Text className="text-gray-800">Formas de Pagamento</Text>
-                            </View>
-                            <Feather name="chevron-right" size={20} color="#6b7280" />
-                        </Pressable>
-                    </View>
-
-                    <View className="bg-white rounded-xl shadow-sm">
-                        <View className="p-4 border-b border-gray-200">
-                            <Text className="text-lg font-bold text-gray-800">Sobre</Text>
-                        </View>
-
-                        <View className="p-4 border-b border-gray-200">
-                            <Text className="text-gray-600 text-sm">Versão do App</Text>
-                            <Text className="text-gray-800 font-semibold mt-1">1.0.0</Text>
-                        </View>
-
-                        <Pressable className="flex-row items-center justify-between p-4">
-                            <Text className="text-gray-800">Termos de Uso</Text>
-                            <Feather name="chevron-right" size={20} color="#6b7280" />
-                        </Pressable>
-                    </View>
-                </View>
+                    <Divisor />
+                    <LinhaLink rotulo="Termos de Uso" />
+                </Secao>
             </ScrollView>
         </ScreenWrapper>
     );

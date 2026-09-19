@@ -1,12 +1,13 @@
+import { Cores, Fontes, Raio, Sombra } from '@/constants/design';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { setModalFormulario } from '@/redux/actions/actionsModais';
 import Feather from '@expo/vector-icons/Feather';
 import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MaskInput, { Mask } from 'react-native-mask-input';
 
 export type CampoFormulario = {
-    nome: string;
+    name: string;
     label: string;
     placeholder: string;
     tipo?: 'text' | 'number' | 'phone' | 'email' | 'currency';
@@ -38,9 +39,9 @@ const ModalFormulario = () => {
     const validarCampos = () => {
         const novosErros: Record<string, string> = {};
 
-        modalFormulario.campos.forEach(campo => {
-            if (campo.obrigatorio && !valores[campo.nome]?.trim()) {
-                novosErros[campo.nome] = `${campo.label} é obrigatório`;
+        modalFormulario.campos.forEach((campo: CampoFormulario) => {
+            if (campo.obrigatorio && !valores[campo.name]?.trim()) {
+                novosErros[campo.name] = `${campo.label} é obrigatório`;
             }
         });
 
@@ -138,220 +139,248 @@ const ModalFormulario = () => {
             animationType="slide"
             onRequestClose={handleCancelar}
         >
-            <Pressable
-                style={styles.overlay}
-                onPress={handleCancelar}
+            {/* O KeyboardAvoidingView precisa ser o nó mais externo dentro do
+                Modal: ele encolhe a área disponível, a folha reancora no fundo
+                dessa área reduzida e sai de baixo do teclado. */}
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.avoider}
             >
-                <Pressable
-                    style={styles.container}
-                    onPress={(e) => e.stopPropagation()}
-                >
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <Text style={styles.title}>{modalFormulario.titulo}</Text>
-                        <TouchableOpacity onPress={handleCancelar} style={styles.closeButton}>
-                            <Feather name="x" size={24} color="#6b7280" />
-                        </TouchableOpacity>
-                    </View>
+                <View style={styles.overlay}>
+                    {/* Fundo clicável separado da folha. Antes eram dois Pressable
+                        aninhados com stopPropagation — o de fora cobria a folha
+                        inteira e disputava os toques dos campos. */}
+                    <Pressable style={styles.backdrop} onPress={handleCancelar} />
 
-                    {/* Formulário */}
-                    <ScrollView
-                        style={styles.scrollView}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        <View style={styles.form}>
-                            {modalFormulario.campos.map((campo: CampoFormulario, index: number) => (
-                                <View key={campo.nome} style={styles.fieldContainer}>
-                                    <Text style={styles.label}>
-                                        {campo.label}
-                                        {campo.obrigatorio && <Text style={styles.required}> *</Text>}
-                                    </Text>
-
-                                    <View style={[
-                                        styles.inputWrapper,
-                                        erros[campo.nome] && styles.inputError,
-                                        campo.multiline && { height: 'auto', alignItems: 'flex-start', paddingVertical: 12 }
-                                    ]}>
-                                        {campo.icone && (
-                                            <Feather
-                                                name={campo.icone}
-                                                size={20}
-                                                color={erros[campo.nome] ? '#ef4444' : '#6b7280'}
-                                                style={styles.inputIcon}
-                                            />
-                                        )}
-                                        <MaskInput
-                                            style={[
-                                                styles.input,
-                                                campo.multiline && { height: (campo.linhas || 4) * 24, textAlignVertical: 'top' }
-                                            ]}
-                                            placeholder={campo.placeholder}
-                                            placeholderTextColor="#9ca3af"
-                                            value={valores[campo.nome] || ''}
-                                            onChangeText={(masked: string, unmasked: string) => {
-                                                // Para currency, salvamos o valor sem máscara
-                                                const valorSalvar = campo.tipo === 'currency' ? unmasked : masked;
-                                                handleChangeValor(campo.nome, valorSalvar);
-                                            }}
-                                            mask={campo.mascara || getMascaraPadrao(campo.tipo)}
-                                            keyboardType={getTipoTeclado(campo.tipo)}
-                                            multiline={campo.multiline}
-                                        />
-                                    </View>
-
-                                    {erros[campo.nome] && (
-                                        <Text style={styles.errorText}>{erros[campo.nome]}</Text>
-                                    )}
-                                </View>
-                            ))}
+                    <View style={styles.container}>
+                        {/* Header */}
+                        <View style={styles.header}>
+                            <View style={styles.grabber} />
+                            <View style={styles.headerRow}>
+                                <Text style={styles.title}>{modalFormulario.titulo?.toUpperCase()}</Text>
+                                <TouchableOpacity onPress={handleCancelar} style={styles.closeButton}>
+                                    <Feather name="x" size={20} color={Cores.inkMuted} />
+                                </TouchableOpacity>
+                            </View>
                         </View>
-                    </ScrollView>
 
-                    {/* Botões */}
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity
-                            onPress={handleCancelar}
-                            style={[styles.button, styles.buttonCancel]}
+                        {/* Formulário */}
+                        <ScrollView
+                            style={styles.scrollView}
+                            showsVerticalScrollIndicator={false}
+                            // Sem isto, com o teclado aberto o primeiro toque em
+                            // "Salvar" só fecha o teclado — o usuário precisa
+                            // tocar duas vezes.
+                            keyboardShouldPersistTaps="handled"
+                            keyboardDismissMode="on-drag"
                         >
-                            <Text style={styles.buttonTextCancel}>
-                                {modalFormulario.textoBotaoCancelar || 'Cancelar'}
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={handleConfirmar}
-                            style={[styles.button, styles.buttonConfirm]}
-                        >
-                            <Text style={styles.buttonText}>
-                                {modalFormulario.textoBotaoConfirmar || 'Salvar'}
-                            </Text>
-                        </TouchableOpacity>
+                            <View style={styles.form}>
+                                {modalFormulario.campos.map((campo: CampoFormulario, index: number) => (
+                                    <View key={campo.name} style={styles.fieldContainer}>
+                                        <Text style={styles.label}>
+                                            {campo.label}
+                                            {campo.obrigatorio && <Text style={styles.required}> *</Text>}
+                                        </Text>
+
+                                        <View style={[
+                                            styles.inputWrapper,
+                                            erros[campo.name] && styles.inputError,
+                                            campo.multiline && { height: 'auto', alignItems: 'flex-start', paddingVertical: 12 }
+                                        ]}>
+                                            {campo.icone && (
+                                                <Feather
+                                                    name={campo.icone}
+                                                    size={18}
+                                                    color={erros[campo.name] ? Cores.danger : Cores.inkSubtle}
+                                                    style={styles.inputIcon}
+                                                />
+                                            )}
+                                            <MaskInput
+                                                style={[
+                                                    styles.input,
+                                                    campo.multiline && { height: (campo.linhas || 4) * 24, textAlignVertical: 'top' }
+                                                ]}
+                                                placeholder={campo.placeholder}
+                                                placeholderTextColor={Cores.inkSubtle}
+                                                value={valores[campo.name] || ''}
+                                                onChangeText={(masked: string, unmasked: string) => {
+                                                    // Para currency, salvamos o valor sem máscara
+                                                    const valorSalvar = campo.tipo === 'currency' ? unmasked : masked;
+                                                    handleChangeValor(campo.name, valorSalvar);
+                                                }}
+                                                mask={campo.mascara || getMascaraPadrao(campo.tipo)}
+                                                keyboardType={getTipoTeclado(campo.tipo)}
+                                                multiline={campo.multiline}
+                                            />
+                                        </View>
+
+                                        {erros[campo.name] && (
+                                            <Text style={styles.errorText}>{erros[campo.name]}</Text>
+                                        )}
+                                    </View>
+                                ))}
+                            </View>
+                        </ScrollView>
+
+                        {/* Botões */}
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity
+                                onPress={handleCancelar}
+                                style={[styles.button, styles.buttonCancel]}
+                            >
+                                <Text style={styles.buttonTextCancel}>
+                                    {modalFormulario.textoBotaoCancelar || 'Cancelar'}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={handleConfirmar}
+                                style={[styles.button, styles.buttonConfirm]}
+                            >
+                                <Text style={styles.buttonText}>
+                                    {modalFormulario.textoBotaoConfirmar || 'Salvar'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                </Pressable>
-            </Pressable>
+                </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };
 
 const styles = StyleSheet.create({
+    avoider: {
+        flex: 1,
+    },
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(26, 26, 24, 0.55)',
         justifyContent: 'flex-end',
     },
+    backdrop: {
+        ...StyleSheet.absoluteFillObject,
+    },
     container: {
-        backgroundColor: '#ffffff',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
+        backgroundColor: Cores.surface,
+        borderTopLeftRadius: Raio.sheet,
+        borderTopRightRadius: Raio.sheet,
         maxHeight: '90%',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: -4,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 12,
-        elevation: 20,
+        ...Sombra.nivel3,
     },
     header: {
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: Cores.line,
+    },
+    /** Puxador: sinaliza folha arrastável e dá o respiro do topo. */
+    grabber: {
+        width: 36,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: Cores.lineStrong,
+        alignSelf: 'center',
+        marginTop: 10,
+        marginBottom: 14,
+    },
+    headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
     },
     title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#1f2937',
+        fontFamily: Fontes.display,
+        fontSize: 19,
+        letterSpacing: 1.4,
+        color: Cores.ink,
         flex: 1,
     },
     closeButton: {
         padding: 4,
     },
+    // flexShrink no lugar de maxHeight fixo: com o teclado aberto a área útil
+    // encolhe, e um teto de 500px faria a folha estourar por cima, cortando o
+    // cabeçalho. Assim a lista de campos cede espaço e header/botões sempre cabem.
     scrollView: {
-        maxHeight: 500,
+        flexShrink: 1,
     },
     form: {
         padding: 20,
     },
     fieldContainer: {
-        marginBottom: 20,
+        marginBottom: 18,
     },
     label: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#374151',
-        marginBottom: 8,
+        fontFamily: Fontes.medium,
+        fontSize: 13,
+        color: Cores.inkMuted,
+        marginBottom: 7,
     },
     required: {
-        color: '#ef4444',
+        color: Cores.danger,
     },
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f9fafb',
-        borderRadius: 12,
-        borderWidth: 1.5,
-        borderColor: '#e5e7eb',
-        paddingHorizontal: 16,
-        minHeight: 56,
+        backgroundColor: Cores.canvas,
+        borderRadius: Raio.control,
+        borderWidth: 1,
+        borderColor: Cores.line,
+        paddingHorizontal: 14,
+        minHeight: 52,
     },
     inputError: {
-        borderColor: '#ef4444',
-        backgroundColor: '#fef2f2',
+        borderColor: Cores.danger,
+        backgroundColor: Cores.dangerSoft,
     },
     inputIcon: {
-        marginRight: 12,
+        marginRight: 10,
     },
     input: {
         flex: 1,
-        fontSize: 16,
-        color: '#1f2937',
+        fontFamily: Fontes.regular,
+        fontSize: 15,
+        color: Cores.ink,
     },
     errorText: {
-        fontSize: 14,
-        color: '#ef4444',
-        marginTop: 4,
-        marginLeft: 4,
+        fontFamily: Fontes.regular,
+        fontSize: 12.5,
+        color: Cores.danger,
+        marginTop: 5,
+        marginLeft: 2,
     },
     buttonContainer: {
         flexDirection: 'row',
         padding: 20,
-        gap: 12,
+        gap: 10,
         borderTopWidth: 1,
-        borderTopColor: '#e5e7eb',
+        borderTopColor: Cores.line,
     },
     button: {
         flex: 1,
-        paddingVertical: 16,
-        borderRadius: 12,
+        paddingVertical: 14,
+        borderRadius: Raio.control,
         alignItems: 'center',
         justifyContent: 'center',
     },
     buttonCancel: {
-        backgroundColor: '#f3f4f6',
+        backgroundColor: Cores.surface,
+        borderWidth: 1,
+        borderColor: Cores.line,
     },
     buttonConfirm: {
-        backgroundColor: '#10b981',
-        shadowColor: '#10b981',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
+        backgroundColor: Cores.brand,
+        ...Sombra.nivel2,
     },
     buttonText: {
-        color: '#ffffff',
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontFamily: Fontes.semibold,
+        color: Cores.inkInverse,
+        fontSize: 15,
     },
     buttonTextCancel: {
-        color: '#6b7280',
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontFamily: Fontes.semibold,
+        color: Cores.inkMuted,
+        fontSize: 15,
     },
 });
 

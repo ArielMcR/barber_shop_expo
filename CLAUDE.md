@@ -4,7 +4,7 @@
 
 Sistema de gerenciamento de barbearia em React Native / Expo. Permite que o barbeiro gerencie **agendamentos**, **clientes** e **serviços** via aplicativo mobile.
 
-**Credenciais de teste:** `admin` / `123`
+**Credenciais de teste** (usuários do seed do back-end, login por `name`): `Ariel` / `123`
 
 ---
 
@@ -60,9 +60,9 @@ barber_shop_v2/
 │   │   ├── clientReducer.ts      # Lista de clientes
 │   │   └── servicoReducer.ts     # Lista de serviços
 │   ├── sagas/
-│   │   ├── sagasUsuario.ts       # Auth saga (login mock: admin/123)
-│   │   ├── sagasClient.ts        # Clientes saga (dados mock)
-│   │   └── sagasServico.ts       # Serviços saga (dados mock)
+│   │   ├── sagasUsuario.ts       # Auth saga (POST /auth/login, GET /auth/me)
+│   │   ├── sagasClient.ts        # Clientes saga (API real)
+│   │   └── sagasServico.ts       # Serviços saga (API real)
 │   └── types/
 │       ├── typesModais.ts        # Action types dos modais
 │       ├── typesUsuario.ts       # Action types de usuário
@@ -77,12 +77,13 @@ barber_shop_v2/
 │
 ├── components/                   # Componentes reutilizáveis
 │   ├── ScreenWrapper.tsx         # Wrapper com safe area insets
-│   ├── Button/index.tsx          # Botão primário customizado
+│   ├── CabecalhoTela/index.tsx   # Cabeçalho padrão (título + subtítulo + ações)
 │   ├── Copyright/index.tsx       # Rodapé de copyright (TekoBit)
-│   ├── LabeledInput/index.tsx    # Input com label
-│   ├── ModalCadastro/            # (legado — substituído por ModalFormulario)
-│   ├── ApontamentoItem/          # (legado)
-│   └── TabBarAgendamento/        # (legado)
+│   ├── Button/index.tsx          # (morto — ninguém importa)
+│   ├── LabeledInput/index.tsx    # (morto — ninguém importa)
+│   ├── ModalCadastro/            # (morto — substituído por ModalFormulario)
+│   ├── ApontamentoItem/          # (morto)
+│   └── TabBarAgendamento/        # (morto — e quebra o tsc: falta react-native-tab-view)
 │
 ├── hooks/                        # Hooks customizados
 │   ├── useRedux.ts               # useAppDispatch e useAppSelector tipados
@@ -104,7 +105,8 @@ barber_shop_v2/
 │   └── conversorData.ts          # Helpers de formatação de data
 │
 └── constants/
-    └── theme.ts                  # Cores e fontes do tema
+    ├── design.ts                 # ⭐ Sistema de design: Cores, Fontes, Raio, Sombra
+    └── theme.ts                  # (boilerplate do Expo — não usado por nenhuma tela)
 ```
 
 ---
@@ -218,11 +220,40 @@ type AgendamentoSlot = {
 
 ### Slices disponíveis
 ```ts
-store.getState().usuario    // autenticação, dados do usuário
-store.getState().modais     // estado de cada modal
-store.getState().servicos   // lista de serviços
-store.getState().clientes   // lista de clientes
+store.getState().usuario     // autenticação, dados do usuário
+store.getState().modais      // estado de cada modal
+store.getState().servicos    // lista de serviços
+store.getState().clientes    // lista de clientes
+store.getState().loja        // dados da barbearia (nome, CNPJ, endereço, telefone)
+store.getState().agendamentos
+store.getState().relatorios
+store.getState().observacoes
+store.getState().assistente  // chat em linguagem natural (Sprint 3)
 ```
+
+### Assistente (Sprint 3)
+
+Tela `app/(drawer)/(tabs)/assistente.tsx` — chat que envia comandos em português para
+`POST /assistant/command`. Também acessível pelo FAB da tela de Agenda.
+
+- `mensagens[]` guarda `criadaEm` como **ISO string, não `Date`** — o store precisa ser serializável
+- A mensagem do usuário entra de forma otimista no `SEND_COMMAND_REQUEST`, antes da resposta da API
+- Erro de negócio chega como **HTTP 200** com `status: 'EXECUTION_ERROR'` — só falha de rede cai no
+  `catch` da saga. Por isso o chat não usa `ModalAviso`: a falha vira balão vermelho na conversa
+- Cada comando gasta 2 chamadas ao Gemini (voz gasta 3). O que trava é a **cota diária** do plano
+  gratuito, não a por minuto — ver `back-end/README.md`
+
+**Voz:** segurar o botão de microfone grava com `expo-audio` (`useAudioRecorder` +
+`RecordingPresets.HIGH_QUALITY`, saída `.m4a`) e solta envia para `POST /assistant/command/audio`
+como `multipart/form-data`. O `Content-Type` precisa ser sobrescrito na chamada, porque o
+`services/api.ts` fixa `application/json` no cliente.
+
+- O balão do usuário nasce **vazio** (`aguardandoTranscricao`) e é preenchido quando o backend
+  devolve `transcription` — o usuário precisa ver se o assistente ouviu errado
+- O microfone só aparece com o campo de texto vazio, para não competir com o botão de enviar
+- Comando falado gasta **3** chamadas ao Gemini (transcrição + as 2 do texto): ~1 por minuto no
+  free tier
+- Roda em Expo Go; STT nativo no aparelho exigiria development build
 
 ### Hooks tipados (sempre usar esses)
 ```ts
@@ -235,12 +266,87 @@ const clientes = useAppSelector(state => state.clientes.lista);
 
 ## Convenções e Padrões
 
-### Estilização
-- Usar **NativeWind** (classes Tailwind) como padrão principal
-- Cor primária: `green-500` / `#10b981`
-- Fundo de telas: `bg-gray-50` ou `bg-gray-100`
-- Cards: `bg-white` com `rounded-xl`
-- NÃO usar StyleSheet salvo casos específicos (animações, valores dinâmicos)
+### Recarga de dados — `useFocusEffect`, não `useEffect([])`
+
+As abas **permanecem montadas** ao trocar de tela, então `useEffect(..., [])` roda uma única vez
+na vida do app. Quem agendava pelo assistente e voltava para a agenda continuava vendo o estado
+anterior. Todas as telas de dados usam `useFocusEffect(useCallback(...))` do `expo-router`.
+
+Além disso, `sagasAssistente` **revalida o que a ferramenta mexeu** logo após um comando bem
+sucedido: `CREATE_APPOINTMENT` → `requestAgendamentos()`, `REGISTER_CLIENT` → `requestClients()`.
+`QUERY_SCHEDULE` e `GENERATE_REPORT` são leitura e não invalidam nada. **Ao adicionar uma função
+nova ao assistente que escreva no banco, acrescente a revalidação lá.**
+
+### Datas — nunca use `toISOString()` para chave de dia
+
+`toISOString()` devolve **UTC**. No Brasil (UTC−3), das 21h em diante ele já retorna o dia
+seguinte. Como as chaves da agenda (`agendamentos[data]`) são strings `YYYY-MM-DD`, isso fazia
+a grade da semana inteira apontar para o dia errado à noite: um agendamento de sexta aparecia
+sob o botão de quinta, e o botão de sexta vinha vazio.
+
+Use **`paraDataLocalISO(date)`** de `utils/conversorData.ts` em qualquer lugar que gere chave de
+dia. O back-end grava `appointmentDate` à meia-noite **local**, então ler em local é o par correto.
+
+### Agendamento tem 1..N serviços
+
+A API devolve `apt.services[]` (não `apt.service`), cada item com `unitPrice` e `durationMinutes`
+**congelados na marcação**. `resumirServicos()` em `sagasAgendamento` transforma os itens no
+"serviço" que a tela consome:
+
+- `nome` → nomes concatenados com `+`
+- `duracao` / `duracaoMin` → **soma** das durações (é o que define quantos slots ocupa)
+- `preco` → **soma** dos preços congelados
+- `itens[]` → lista original, usada pelo `ModalDetalheAgendamento` e para remarcar no
+  `ModalAgendamento`
+
+`createAgendamento` envia **`serviceIds: number[]`**. O `ModalAgendamento` usa lista com marcação
+e mostra duração/slots/total antes de confirmar — a soma pode estourar o expediente ou o almoço.
+
+### Grade de horários
+
+`SLOTS_MANHA`, `SLOTS_TARDE` e `TODOS_SLOTS` vivem em `utils/constants.ts` — **fonte única**.
+A tela e a saga já tiveram cópias divergentes (a saga começava às 09:00 e não conhecia 08:00,
+08:30 e 13:15), e como a saga usa `indexOf(startTime)` para marcar os slots seguintes de serviços
+longos, um horário ausente virava índice −1 e pintava a ocupação nos slots errados.
+Espelha o `AppointmentScheduleValidator` do back-end (08:00–12:00 e 13:15–19:30).
+
+### Estilização — sistema de design "creme + cobre"
+
+**Nunca escreva cor literal** (`#10b981`, `bg-green-500`, `bg-gray-50`). Tudo vem de tokens:
+
+- `constants/design.ts` → `Cores`, `Fontes`, `Raio`, `Sombra`. Use onde só cabe hex cru:
+  opções de navegação, `StyleSheet`, prop `color` de ícone.
+- `tailwind.config.js` → as mesmas cores como classes. Use em JSX.
+- Ao mexer numa cor, mexa **nos dois arquivos** — eles se espelham manualmente.
+
+| Papel | Classe | Token |
+|---|---|---|
+| Fundo de tela | `bg-canvas` | `Cores.canvas` |
+| Card | `bg-surface` | `Cores.surface` |
+| Card rebaixado | `bg-surface-alt` | `Cores.surfaceAlt` |
+| Divisor / contorno | `border-line` | `Cores.line` |
+| Texto principal | `text-ink` | `Cores.ink` |
+| Texto secundário | `text-ink-muted` | `Cores.inkMuted` |
+| Texto terciário | `text-ink-subtle` | `Cores.inkSubtle` |
+| Marca / ação primária | `bg-brand` | `Cores.brand` (cobre `#B87333`) |
+
+**Cor tem significado — não reutilize.** Cobre é *só* marca e ação primária; verde é *só*
+"concluído"; vermelho é *só* destrutivo/cancelado; dourado é *só* atenção. Foi exatamente
+essa sobreposição (verde servindo de marca + sucesso + ocupado + preço ao mesmo tempo) que
+deixou a versão anterior sem hierarquia.
+
+**Tipografia:** Oswald (`font-display`) em títulos, horários e valores; Inter
+(`font-sans`/`font-medium`/`font-semibold`/`font-bold`) em todo o resto. As fontes são
+carregadas em `app/_layout.tsx` — importe **por subpath** (`@expo-google-fonts/inter/400Regular`),
+nunca pelo barrel, que arrasta ~7 MB de pesos não usados para o bundle.
+
+**Sem faixa colorida no topo.** Telas usam `<CabecalhoTela titulo subtitulo acoes />`;
+a hierarquia vem do peso da fonte, não de um bloco de cor.
+
+- Usar **NativeWind** como padrão em telas e componentes
+- Cards: `bg-surface rounded-card` + `style={Sombra.nivel1}`
+- Os 5 modais continuam em `StyleSheet` (animações e folhas), mas consumindo `Cores`/`Fontes`/`Raio`/`Sombra`
+- `modais/` está no `content` do Tailwind — classes ali funcionam se quiser migrar
 
 ### Ícones
 - **Feather** (`@expo/vector-icons/Feather`) — padrão na maioria dos componentes
@@ -260,7 +366,7 @@ const clientes = useAppSelector(state => state.clientes.lista);
 ## Status Atual de Desenvolvimento
 
 ### Implementado
-- [x] Autenticação com login/logout (mock: admin/123)
+- [x] Autenticação com login/logout via API real (`name` + senha)
 - [x] Navegação Drawer + Tabs
 - [x] Sistema de agendamentos com slots semanais
 - [x] Lista de clientes com busca e refresh
@@ -274,7 +380,6 @@ const clientes = useAppSelector(state => state.clientes.lista);
 
 ### Pendente / Próximos Passos
 - [ ] Persistência de agendamentos (AsyncStorage ou API)
-- [ ] Integração com backend real (substituir sagas mock)
 - [ ] Tela de Relatórios com dados reais (atualmente estática)
 - [ ] Tela de Perfil funcional
 - [ ] Tela de Configurações funcional
@@ -326,7 +431,7 @@ npm run lint         # Verificar lint
 
 ## Notas Importantes
 
-1. **Dados mock:** Clientes e serviços são gerados em sagas com dados hardcoded. Substituir pelas chamadas de API quando o backend estiver disponível.
+1. **Slice `loja`:** guarda os dados da barbearia devolvidos por `/auth/login` e `/auth/me` (o back-end é de instalação única — não há seleção de empresa/unidade).
 2. **Agendamentos em memória:** Os agendamentos vivem no estado local da tela (useState). Precisam ser persistidos em AsyncStorage ou backend.
 3. **AsyncStorage está em devDependencies** no package.json — mover para dependencies se necessário para uso em produção.
 4. **New Architecture ativada** no app.json — considerar ao usar libs nativas.

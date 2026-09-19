@@ -1,9 +1,9 @@
+import { Cores, Fontes, Raio, Sombra } from '@/constants/design';
 import { useAppDispatch, useAppSelector } from '@/hooks/useRedux';
 import { setModalAviso } from '@/redux/actions/actionsModais';
 import Feather from '@expo/vector-icons/Feather';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const ModalAviso = () => {
     const dispatch = useAppDispatch();
@@ -64,52 +64,68 @@ const ModalAviso = () => {
         fecharModal();
     };
 
+    // Sem gradiente: um disco de cor suave com borda e ícone sólido. O gradiente
+    // brilhante era o detalhe que mais datava o modal.
+    //
+    // `corTexto` é o rótulo do botão sólido preenchido com `cor`. Quase toda cor
+    // de status é escura o bastante para o creme, mas o dourado do aviso não é:
+    // creme sobre #C9971C dá 2,5:1 de contraste (o mínimo legível é 4,5:1) e o
+    // texto some dentro do botão. Sobre ele o rótulo vai em tinta escura — 6,5:1.
     const getTipoConfig = () => {
         switch (modalAviso.tipo) {
             case 'sucesso':
                 return {
                     icon: 'check-circle' as const,
-                    gradient: ['#34d399', '#059669'] as const,
-                    lightBg: 'rgba(16, 185, 129, 0.08)',
-                    accentColor: '#059669',
-                    title: 'Sucesso!',
+                    cor: Cores.success,
+                    corSoft: Cores.successSoft,
+                    corBorda: Cores.successBorder,
+                    corTexto: Cores.inkInverse,
+                    title: 'SUCESSO',
                 };
             case 'erro':
                 return {
                     icon: 'x-circle' as const,
-                    gradient: ['#f87171', '#dc2626'] as const,
-                    lightBg: 'rgba(239, 68, 68, 0.08)',
-                    accentColor: '#dc2626',
-                    title: 'Erro!',
+                    cor: Cores.danger,
+                    corSoft: Cores.dangerSoft,
+                    corBorda: Cores.dangerBorder,
+                    corTexto: Cores.inkInverse,
+                    title: 'ERRO',
                 };
             case 'aviso':
                 return {
                     icon: 'alert-triangle' as const,
-                    gradient: ['#fbbf24', '#d97706'] as const,
-                    lightBg: 'rgba(245, 158, 11, 0.08)',
-                    accentColor: '#d97706',
-                    title: 'Atenção!',
+                    cor: Cores.warning,
+                    corSoft: Cores.warningSoft,
+                    corBorda: Cores.warningBorder,
+                    corTexto: Cores.ink,
+                    title: 'ATENÇÃO',
                 };
             case 'info':
                 return {
                     icon: 'info' as const,
-                    gradient: ['#60a5fa', '#2563eb'] as const,
-                    lightBg: 'rgba(59, 130, 246, 0.08)',
-                    accentColor: '#2563eb',
-                    title: 'Informação',
+                    cor: Cores.info,
+                    corSoft: Cores.infoSoft,
+                    corBorda: Cores.infoBorder,
+                    corTexto: Cores.inkInverse,
+                    title: 'INFORMAÇÃO',
                 };
             default:
                 return {
                     icon: 'alert-circle' as const,
-                    gradient: ['#9ca3af', '#6b7280'] as const,
-                    lightBg: 'rgba(107, 114, 128, 0.08)',
-                    accentColor: '#6b7280',
-                    title: 'Aviso',
+                    cor: Cores.inkMuted,
+                    corSoft: Cores.surfaceAlt,
+                    corBorda: Cores.line,
+                    corTexto: Cores.inkInverse,
+                    title: 'AVISO',
                 };
         }
     };
 
     const config = getTipoConfig();
+    const corBotao = modalAviso.inverterCoresBotaoInfo ? Cores.inkMuted : config.cor;
+    const corTextoBotao = modalAviso.inverterCoresBotaoInfo
+        ? Cores.inkInverse
+        : config.corTexto;
 
     return (
         <Modal
@@ -120,7 +136,12 @@ const ModalAviso = () => {
         >
             <Animated.View style={[styles.overlay, { opacity: opacityAnim }]}>
                 <Pressable style={styles.overlayPress} onPress={fecharModal}>
-                    <Pressable onPress={(e) => e.stopPropagation()}>
+                    {/* O wrapper precisa de largura própria: `overlayPress` centraliza
+                        com `alignItems: 'center'`, então este Pressable não estica e
+                        fica com largura automática. Sem isso o `width: '100%'` do card
+                        resolve contra um pai indefinido, vira `auto`, e o modal encolhe
+                        até o tamanho do texto em vez de chegar nos 360. */}
+                    <Pressable style={styles.cardWrapper} onPress={(e) => e.stopPropagation()}>
                         <Animated.View
                             style={[
                                 styles.container,
@@ -130,35 +151,27 @@ const ModalAviso = () => {
                                 },
                             ]}
                         >
-                            {/* Floating Icon Badge */}
+                            {/* Selo flutuante sobre o card */}
                             <View style={styles.iconWrapper}>
                                 <Animated.View
-                                    style={{
-                                        transform: [{ scale: iconBounce }],
-                                    }}
+                                    style={[
+                                        styles.iconBadge,
+                                        {
+                                            backgroundColor: config.corSoft,
+                                            borderColor: config.corBorda,
+                                            transform: [{ scale: iconBounce }],
+                                        },
+                                    ]}
                                 >
-                                    <LinearGradient
-                                        colors={config.gradient}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 1 }}
-                                        style={styles.iconBadge}
-                                    >
-                                        <Feather
-                                            name={config.icon}
-                                            size={40}
-                                            color="#ffffff"
-                                        />
-                                    </LinearGradient>
+                                    <Feather name={config.icon} size={32} color={config.cor} />
                                 </Animated.View>
                             </View>
 
-                            {/* Content */}
+                            {/* Conteúdo */}
                             <View style={styles.content}>
-                                <Text style={[styles.title, { color: config.accentColor }]}>
+                                <Text style={[styles.title, { color: config.cor }]}>
                                     {config.title}
                                 </Text>
-
-                                <View style={[styles.divider, { backgroundColor: config.accentColor }]} />
 
                                 <Text
                                     style={[
@@ -170,70 +183,59 @@ const ModalAviso = () => {
                                 </Text>
                             </View>
 
-                            {/* Buttons */}
+                            {/* Botões.
+
+                                TouchableOpacity com estilo em ARRAY, como nos
+                                outros modais. `Pressable` com estilo em função
+                                (`({pressed}) => [...]`) não funciona aqui: o
+                                projeto compila o JSX com `jsxImportSource:
+                                "nativewind"`, e o interop do NativeWind não
+                                repassa a forma de função — o estilo inteiro era
+                                descartado, deixando o botão sem cor de fundo e
+                                sem centralização, com o rótulo creme sumindo
+                                sobre o branco do card. */}
                             <View style={styles.buttonContainer}>
                                 {modalAviso.textoBotaoCancelar && modalAviso.textoBotaoConfirmar ? (
                                     <View style={styles.buttonRow}>
-                                        <Pressable
+                                        <TouchableOpacity
                                             onPress={handleCancelar}
-                                            style={({ pressed }) => [
-                                                styles.button,
-                                                styles.buttonCancel,
-                                                pressed && styles.buttonPressed,
-                                            ]}
+                                            activeOpacity={0.85}
+                                            style={[styles.button, styles.buttonFlex, styles.buttonCancel]}
                                         >
                                             <Text style={styles.buttonTextCancel}>
                                                 {modalAviso.textoBotaoCancelar}
                                             </Text>
-                                        </Pressable>
+                                        </TouchableOpacity>
 
-                                        <Pressable
+                                        <TouchableOpacity
                                             onPress={handleConfirmar}
-                                            style={({ pressed }) => [
+                                            activeOpacity={0.85}
+                                            style={[
                                                 styles.button,
-                                                pressed && styles.buttonPressed,
+                                                styles.buttonFlex,
+                                                styles.buttonSolid,
+                                                { backgroundColor: corBotao },
                                             ]}
                                         >
-                                            <LinearGradient
-                                                colors={
-                                                    modalAviso.inverterCoresBotaoInfo
-                                                        ? ['#9ca3af', '#6b7280']
-                                                        : config.gradient
-                                                }
-                                                start={{ x: 0, y: 0 }}
-                                                end={{ x: 1, y: 0 }}
-                                                style={styles.buttonGradient}
-                                            >
-                                                <Text style={styles.buttonText}>
-                                                    {modalAviso.textoBotaoConfirmar}
-                                                </Text>
-                                            </LinearGradient>
-                                        </Pressable>
+                                            <Text style={[styles.buttonText, { color: corTextoBotao }]}>
+                                                {modalAviso.textoBotaoConfirmar}
+                                            </Text>
+                                        </TouchableOpacity>
                                     </View>
                                 ) : (
-                                    <Pressable
+                                    <TouchableOpacity
                                         onPress={handleConfirmar}
-                                        style={({ pressed }) => [
+                                        activeOpacity={0.85}
+                                        style={[
                                             styles.button,
-                                            styles.buttonSingle,
-                                            pressed && styles.buttonPressed,
+                                            styles.buttonSolid,
+                                            { backgroundColor: corBotao },
                                         ]}
                                     >
-                                        <LinearGradient
-                                            colors={
-                                                modalAviso.inverterCoresBotaoInfo
-                                                    ? ['#9ca3af', '#6b7280']
-                                                    : config.gradient
-                                            }
-                                            start={{ x: 0, y: 0 }}
-                                            end={{ x: 1, y: 0 }}
-                                            style={styles.buttonGradient}
-                                        >
-                                            <Text style={styles.buttonText}>
-                                                {modalAviso.textoBotao || 'OK'}
-                                            </Text>
-                                        </LinearGradient>
-                                    </Pressable>
+                                        <Text style={[styles.buttonText, { color: corTextoBotao }]}>
+                                            {modalAviso.textoBotao || 'OK'}
+                                        </Text>
+                                    </TouchableOpacity>
                                 )}
                             </View>
                         </Animated.View>
@@ -247,7 +249,7 @@ const ModalAviso = () => {
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backgroundColor: 'rgba(26, 26, 24, 0.55)',
     },
     overlayPress: {
         flex: 1,
@@ -255,112 +257,103 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 28,
     },
-    container: {
-        backgroundColor: '#ffffff',
-        borderRadius: 28,
+    cardWrapper: {
         width: '100%',
-        maxWidth: 380,
+        maxWidth: 360,
+    },
+    container: {
+        backgroundColor: Cores.surface,
+        borderRadius: Raio.sheet,
+        width: '100%',
         overflow: 'visible',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 16 },
-        shadowOpacity: 0.2,
-        shadowRadius: 32,
-        elevation: 24,
+        ...Sombra.nivel3,
     },
 
-    /* ── Icon Badge (floats above card) ── */
+    /* ── Selo (flutua acima do card) ── */
     iconWrapper: {
         alignItems: 'center',
-        marginTop: -38,
+        marginTop: -32,
     },
     iconBadge: {
-        width: 76,
-        height: 76,
-        borderRadius: 38,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.25,
-        shadowRadius: 12,
-        elevation: 12,
-        borderWidth: 4,
-        borderColor: '#ffffff',
+        // A cor da borda vem inline, do tipo do aviso.
+        borderWidth: 2,
+        ...Sombra.nivel1,
     },
 
-    /* ── Content ── */
+    /* ── Conteúdo ── */
     content: {
-        paddingHorizontal: 28,
-        paddingTop: 18,
-        paddingBottom: 8,
+        paddingHorizontal: 26,
+        paddingTop: 14,
+        paddingBottom: 4,
         alignItems: 'center',
     },
     title: {
-        fontSize: 22,
-        fontWeight: '800',
-        letterSpacing: 0.3,
-    },
-    divider: {
-        width: 40,
-        height: 3,
-        borderRadius: 2,
-        marginTop: 10,
-        marginBottom: 16,
-        opacity: 0.4,
+        fontFamily: Fontes.display,
+        fontSize: 18,
+        letterSpacing: 2,
     },
     message: {
-        fontSize: 16,
-        color: '#4b5563',
-        lineHeight: 24,
-        fontWeight: '400',
+        fontFamily: Fontes.regular,
+        fontSize: 14.5,
+        color: Cores.inkMuted,
+        lineHeight: 22,
+        marginTop: 10,
     },
 
-    /* ── Buttons ── */
+    /* ── Botões ── */
     buttonContainer: {
-        paddingHorizontal: 24,
-        paddingTop: 16,
-        paddingBottom: 24,
+        paddingHorizontal: 22,
+        paddingTop: 20,
+        paddingBottom: 22,
     },
     buttonRow: {
         flexDirection: 'row',
-        gap: 12,
+        gap: 10,
     },
     button: {
-        flex: 1,
-        borderRadius: 16,
-        overflow: 'hidden',
-    },
-    buttonGradient: {
-        paddingVertical: 15,
+        // Sem `flex: 1` aqui. Como estilo compartilhado, ele também caía no
+        // botão único — que é filho de uma COLUNA, onde `flex: 1` vale
+        // `flexBasis: 0` no eixo vertical: a altura deixa de vir do conteúdo e
+        // passa a vir da distribuição de espaço livre. O botão perdia a altura
+        // real (sobrava só o padding, 28pt — abaixo do alvo de toque de 44) e o
+        // rótulo escapava da caixa. Dividir a linha é trabalho do `buttonFlex`,
+        // aplicado só quando existem dois botões, aí sim no eixo horizontal.
+        minHeight: 50,
+        borderRadius: Raio.control,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 16,
     },
-    buttonSingle: {
-        width: '100%',
+    /** Só na linha de dois botões: divide a largura em partes iguais. */
+    buttonFlex: {
+        flex: 1,
+    },
+    buttonSolid: {
+        borderWidth: 1,
+        borderColor: 'transparent',
     },
     buttonCancel: {
-        backgroundColor: '#f3f4f6',
-        paddingVertical: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
+        backgroundColor: Cores.surface,
         borderWidth: 1,
-        borderColor: '#e5e7eb',
-    },
-    buttonPressed: {
-        opacity: 0.8,
-        transform: [{ scale: 0.97 }],
+        borderColor: Cores.line,
     },
     buttonText: {
-        color: '#ffffff',
-        fontWeight: '700',
-        fontSize: 16,
-        letterSpacing: 0.3,
+        fontFamily: Fontes.semibold,
+        // Cor real vem inline, do tipo do aviso: sobre o dourado o creme só
+        // rende 2,5:1 de contraste e o rótulo some.
+        color: Cores.inkInverse,
+        fontSize: 15,
     },
     buttonTextCancel: {
-        color: '#6b7280',
-        fontWeight: '600',
-        fontSize: 16,
+        fontFamily: Fontes.semibold,
+        color: Cores.inkMuted,
+        fontSize: 15,
     },
 });
 

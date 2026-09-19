@@ -14,7 +14,7 @@ type ScreenWrapperProps = {
 
 export default function ScreenWrapper({
     children,
-    className = 'flex-1 bg-gray-50',
+    className = 'flex-1 bg-canvas',
     withTopInset = true,
     withBottomInset = false,
     topOffset = 0,

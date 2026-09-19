@@ -1,15 +1,16 @@
 
 import api from '@/services/api';
 import navigationService from '@/services/navigationService';
-import { typesRole } from '@/types/typesUsuarioRole';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { call, put, takeLatest } from 'redux-saga/effects';
 import { setModalAviso } from '../actions/actionsModais';
 import { clearUsuario, setUsuario } from '../actions/actionsUsuario';
-import { types as typesEmpresa } from '../types/typesEmpresa';
+import { types as typesLoja } from '../types/typesLoja';
 import { types } from '../types/typesUsuario';
 
-const loginAPI = async (credentials: { name: string; password: string, companyId: number | null, unitId: number | null }) => {
+const loginAPI = async (credentials: { name: string; password: string }) => {
+    console.log("loginAPI", credentials);
+    console.log("loginAPI", api.baseURL);
     const { data: dados } = await api.post('/auth/login', credentials);
     return dados;
 };
@@ -19,14 +20,31 @@ function* validarLogin(): Generator<any, void, any> {
         const token = yield call(AsyncStorage.getItem, 'userToken');
         const userData = yield call(AsyncStorage.getItem, 'userData');
 
-        if (token && userData) {
-            const usuario = JSON.parse(userData);
-            yield put(setUsuario(usuario));
-        } else {
+        if (!token || !userData) {
             yield put(clearUsuario());
+            navigationService.replace('/login');
+            return;
         }
+
+        const usuarioSalvo = JSON.parse(userData);
+        yield put(setUsuario({ ...usuarioSalvo, token }));
+
+        const { data: dados } = yield call(api.get, '/auth/me');
+
+        const usuarioAtualizado = { ...usuarioSalvo, ...dados.user, token };
+        yield call(AsyncStorage.setItem, 'userData', JSON.stringify(usuarioAtualizado));
+        yield put(setUsuario(usuarioAtualizado));
+
+        if (dados.settings) {
+            yield put({ type: typesLoja.SET_LOJA, payload: dados.settings });
+        }
+
+        navigationService.replace('/(drawer)/(tabs)');
     } catch (error) {
+        yield call(AsyncStorage.removeItem, 'userToken');
+        yield call(AsyncStorage.removeItem, 'userData');
         yield put(clearUsuario());
+        navigationService.replace('/login');
     }
 }
 
@@ -35,24 +53,11 @@ function* realizarLogin(action: ReturnType<typeof import('../actions/actionsUsua
         console.log("dados de login", action.login);
 
         const resposta = yield call(loginAPI, action.login);
-        // console.log("Resposta", resposta);
-
-
-        const isSuperAdmin = resposta.user?.role === typesRole.SUPER_ADMIN;
-        const precisaSelecionarEmpresa = isSuperAdmin && resposta.companies?.length > 0 && !action.login.companyId;
-
-        if (precisaSelecionarEmpresa) {
-            yield put({ type: typesEmpresa.SET_EMPRESAS, payload: resposta.companies });
-            yield put({ type: typesEmpresa.SET_CREDENCIAIS_TEMP, payload: { name: action.login.name, password: action.login.password } });
-            navigationService.replace('/selecao-empresa');
-            return;
-        }
 
         yield call(AsyncStorage.setItem, 'userToken', resposta.access_token);
         yield call(AsyncStorage.setItem, 'userData', JSON.stringify(resposta.user));
-        yield put(setUsuario(resposta.user));
-        yield put({ type: typesEmpresa.SET_EMPRESA, payload: resposta.company });
-        yield put({ type: typesEmpresa.CLEAR_CREDENCIAIS_TEMP });
+        yield put(setUsuario({ ...resposta.user, token: resposta.access_token }));
+        yield put({ type: typesLoja.SET_LOJA, payload: resposta.settings });
 
         yield put(setModalAviso({
             statusAtivo: true,
@@ -82,9 +87,9 @@ function* deslogarUsuario() {
         yield call(AsyncStorage.removeItem, 'userToken');
         yield call(AsyncStorage.removeItem, 'userData');
         yield put(clearUsuario());
+        yield put({ type: typesLoja.CLEAR_LOJA });
 
-
-        navigationService.replace('/');
+        navigationService.replace('/login');
     } catch (error) {
         console.error('Erro ao deslogar:', error);
     }
